@@ -35,8 +35,9 @@ http://192.168.1.13
 
 Start a listener on port 443:
 
+$
 ```bash
-$ nc -nlvp 443
+ nc -nlvp 443
 ```
 
 On the target machine, run:
