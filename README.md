@@ -173,7 +173,9 @@ Check active tunnels:
 ```
 ![image](https://github.com/user-attachments/assets/79c4ddc4-a94e-476e-bd21-42230fae5ce6)
 
+Start the  Added network in Proxy serve 
 
+## [Agent : root@webserver] » start
 ---
 
 ## 7 - Visit Services from Attacker Machine
